@@ -1,0 +1,32 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Swift Package Manager / build outputs
+.build/
+.swiftpm/
+
+# Xcode local state and build products
+DerivedData/
+*.xcuserdata/
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+*.moved-aside
+*.xcresult
+
+# App/runtime logs and local diagnostics
+events.jsonl
+*.log
+Logs/
+
+# Mac AC Guard local exports if copied into the workspace by accident
+BatteryLab/
+BatteryLabExports/
+*.csv
+
+# Temporary files
+*.tmp
+*.swp
+*.swo
