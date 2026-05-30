@@ -1,17 +1,39 @@
 import Foundation
 
 struct AutoGuardLimitSelector {
-    static let defaultDelta = 5
+    static let minimumAutoLimit = 30
+    static let maximumAutoLimit = 80
+    static let defaultDelta = 1
 
-    static func limit(for batteryPercent: Int) -> ChargeLimitPreset {
-        switch batteryPercent {
-        case ...30: .extremeReserve
-        case 31...40: .lowReserve
-        case 41...50: .longevity
-        case 51...60: .recommendedNetwork
-        case 61...70: .gamingNetwork
-        default: .softProtection
-        }
+    /// Auto Guard keeps the battery near the current charge level with 1% precision,
+    /// but clamps the automatic limit to the safe 30–80% range.
+    ///
+    /// Examples:
+    /// - 25% -> 30%
+    /// - 29% -> 30%
+    /// - 30% -> 30%
+    /// - 57% -> 57%
+    /// - 71% -> 71%
+    /// - 80% -> 80%
+    /// - 83% -> 80%
+    static func limit(for batteryPercent: Int) -> Int {
+        min(max(batteryPercent, minimumAutoLimit), maximumAutoLimit)
+    }
+
+    /// Lower limit for batt hysteresis range.
+    ///
+    /// With defaultDelta = 1:
+    /// - 71% -> 70–71%
+    /// - 80% -> 79–80%
+    /// - 30% -> 29–30%
+    static func lowerLimit(for batteryPercent: Int) -> Int {
+        max(limit(for: batteryPercent) - defaultDelta, 0)
+    }
+
+    static func rangeDescription(for batteryPercent: Int) -> String {
+        let upper = limit(for: batteryPercent)
+        let lower = lowerLimit(for: batteryPercent)
+        return "\(lower)–\(upper)%"
     }
 }
 

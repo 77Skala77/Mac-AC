@@ -76,9 +76,9 @@ final class AppStateTests: XCTestCase {
         XCTAssertEqual(backend.setDeltaCallCount, 1)
         XCTAssertEqual(backend.enableAdapterCallCount, 1)
         XCTAssertEqual(backend.receivedLimits, [60])
-        XCTAssertEqual(backend.receivedDeltas, [5])
-        XCTAssertEqual(appState.lastAutoSelectedLimit, .recommendedNetwork)
-        XCTAssertEqual(appState.lastAutoSelectedDelta, 5)
+        XCTAssertEqual(backend.receivedDeltas, [1])
+        XCTAssertEqual(appState.lastAutoSelectedLimit, 60)
+        XCTAssertEqual(appState.lastAutoSelectedDelta, 1)
         XCTAssertEqual(appState.selectedLimit, .softProtection)
         XCTAssertEqual(appState.selectedDelta, 10)
     }
@@ -181,10 +181,12 @@ final class AppStateTests: XCTestCase {
 
         appState.enableACMode()
 
-        XCTAssertEqual(backend.receivedLimits, [70])
-        XCTAssertEqual(backend.receivedDeltas, [5])
+        XCTAssertEqual(backend.receivedLimits, [67])
+        XCTAssertEqual(backend.receivedDeltas, [1])
         XCTAssertEqual(backend.enableAdapterCallCount, 1)
         XCTAssertTrue(appState.userRequestedAutoGuard)
+        XCTAssertEqual(appState.lastAutoSelectedLimit, 67)
+        XCTAssertEqual(appState.lastAutoSelectedDelta, 1)
     }
 
     func testShortNegativeBatteryPowerDoesNotShowAdapterWarning() {

@@ -88,7 +88,7 @@ struct MainStatusView: View {
     private var upperLimitText: String {
         if appState.backendStatus.battDisabled { return "100%" }
         return appState.backendStatus.actualUpperLimitPercent.map { "\($0)%" }
-            ?? appState.lastAutoSelectedLimit.map { "\($0.rawValue)%" }
+            ?? appState.lastAutoSelectedLimit.map { "\($0)%" }
             ?? appState.text(.unknown)
     }
 
@@ -97,9 +97,9 @@ struct MainStatusView: View {
            let upper = appState.backendStatus.actualUpperLimitPercent {
             return "\(lower)–\(upper)%"
         }
-        if let upper = appState.lastAutoSelectedLimit?.rawValue,
+        if let upper = appState.lastAutoSelectedLimit,
            let delta = appState.lastAutoSelectedDelta {
-            return "\(upper - delta)–\(upper)%"
+            return "\(max(upper - delta, 0))–\(upper)%"
         }
         return appState.text(.unknown)
     }

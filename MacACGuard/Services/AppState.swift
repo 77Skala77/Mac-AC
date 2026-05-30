@@ -8,7 +8,7 @@ final class AppState: ObservableObject {
     @Published var writeAccess: ChargeWriteAccess = .monitorOnly
     @Published var selectedLimit: ChargeLimitPreset = .recommendedNetwork
     @Published var selectedDelta = 5
-    @Published var lastAutoSelectedLimit: ChargeLimitPreset?
+    @Published var lastAutoSelectedLimit: Int?
     @Published var lastAutoSelectedDelta: Int?
     @Published var requestedMode: RequestedGuardMode = .none
     @Published var userRequestedAutoGuard = false
@@ -91,8 +91,18 @@ final class AppState: ObservableObject {
     }
 
     var manualSetupCommands: String {
-        let limit = requestedMode == .auto ? lastAutoSelectedLimit?.rawValue : selectedLimit.rawValue
-        return (try? commandGenerator.instructions(limit: limit ?? selectedLimit.rawValue, delta: requestedMode == .auto ? lastAutoSelectedDelta ?? 5 : selectedDelta)) ?? ""
+        let limit: Int
+        let delta: Int
+
+        if requestedMode == .auto {
+            limit = lastAutoSelectedLimit ?? selectedLimit.rawValue
+            delta = lastAutoSelectedDelta ?? AutoGuardLimitSelector.defaultDelta
+        } else {
+            limit = selectedLimit.rawValue
+            delta = selectedDelta
+        }
+
+        return (try? commandGenerator.instructions(limit: limit, delta: delta)) ?? ""
     }
 
     var warningMessage: String? {
@@ -183,7 +193,7 @@ final class AppState: ObservableObject {
             userRequestedAutoGuard = false
             return
         }
-        applyConfiguration(limit: autoLimit.rawValue, delta: autoDelta)
+        applyConfiguration(limit: autoLimit, delta: autoDelta)
     }
 
     func disableACMode() {

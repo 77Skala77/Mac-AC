@@ -2,17 +2,31 @@ import XCTest
 @testable import MacACGuard
 
 final class AutoGuardLimitSelectorTests: XCTestCase {
-    func testAutoLimitMapping() {
-        XCTAssertEqual(AutoGuardLimitSelector.limit(for: 30), .extremeReserve)
-        XCTAssertEqual(AutoGuardLimitSelector.limit(for: 40), .lowReserve)
-        XCTAssertEqual(AutoGuardLimitSelector.limit(for: 50), .longevity)
-        XCTAssertEqual(AutoGuardLimitSelector.limit(for: 60), .recommendedNetwork)
-        XCTAssertEqual(AutoGuardLimitSelector.limit(for: 67), .gamingNetwork)
-        XCTAssertEqual(AutoGuardLimitSelector.limit(for: 71), .softProtection)
-        XCTAssertEqual(AutoGuardLimitSelector.limit(for: 83), .softProtection)
+    func testAutoLimitClampsToThirtyEightyAndUsesExactPercentInsideRange() {
+        XCTAssertEqual(AutoGuardLimitSelector.limit(for: 25), 30)
+        XCTAssertEqual(AutoGuardLimitSelector.limit(for: 29), 30)
+        XCTAssertEqual(AutoGuardLimitSelector.limit(for: 30), 30)
+
+        XCTAssertEqual(AutoGuardLimitSelector.limit(for: 57), 57)
+        XCTAssertEqual(AutoGuardLimitSelector.limit(for: 61), 61)
+        XCTAssertEqual(AutoGuardLimitSelector.limit(for: 71), 71)
+        XCTAssertEqual(AutoGuardLimitSelector.limit(for: 76), 76)
+        XCTAssertEqual(AutoGuardLimitSelector.limit(for: 80), 80)
+
+        XCTAssertEqual(AutoGuardLimitSelector.limit(for: 83), 80)
+        XCTAssertEqual(AutoGuardLimitSelector.limit(for: 95), 80)
     }
 
-    func testAutoGuardUsesFivePercentDelta() {
-        XCTAssertEqual(AutoGuardLimitSelector.defaultDelta, 5)
+    func testAutoGuardUsesOnePercentDelta() {
+        XCTAssertEqual(AutoGuardLimitSelector.defaultDelta, 1)
+    }
+
+    func testAutoGuardRangeDescriptionUsesOnePercentDelta() {
+        XCTAssertEqual(AutoGuardLimitSelector.rangeDescription(for: 25), "29–30%")
+        XCTAssertEqual(AutoGuardLimitSelector.rangeDescription(for: 30), "29–30%")
+        XCTAssertEqual(AutoGuardLimitSelector.rangeDescription(for: 57), "56–57%")
+        XCTAssertEqual(AutoGuardLimitSelector.rangeDescription(for: 71), "70–71%")
+        XCTAssertEqual(AutoGuardLimitSelector.rangeDescription(for: 76), "75–76%")
+        XCTAssertEqual(AutoGuardLimitSelector.rangeDescription(for: 83), "79–80%")
     }
 }
