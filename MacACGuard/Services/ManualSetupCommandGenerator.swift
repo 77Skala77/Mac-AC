@@ -30,10 +30,11 @@ struct ManualSetupCommandGenerator {
     }
 
     private func validate(limit: Int, delta: Int) throws {
-        guard ChargeLimitPreset.allCases.map(\.rawValue).contains(limit) else {
+        guard (30...80).contains(limit) else {
             throw ChargeLimitError.invalidLimit(limit)
         }
-        guard [2, 5, 10].contains(delta) else {
+
+        guard [1, 2, 5, 10].contains(delta) else {
             throw ChargeLimitError.invalidDelta(delta)
         }
     }
