@@ -19,11 +19,19 @@ final class MonitorOnlyFallbackBackend: ChargeLimitController {
         nil
     }
 
+    func getWriteAccess() -> ChargeWriteAccess {
+        .monitorOnly
+    }
+
     func setChargeLimit(percent: Int) throws {
         throw ChargeLimitError.backendUnavailable(reason)
     }
 
     func setLowerLimitDelta(percent: Int) throws {
+        throw ChargeLimitError.backendUnavailable(reason)
+    }
+
+    func enableAdapter() throws {
         throw ChargeLimitError.backendUnavailable(reason)
     }
 

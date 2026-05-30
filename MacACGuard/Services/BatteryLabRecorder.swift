@@ -23,7 +23,7 @@ final class BatteryLabRecorder: ObservableObject {
     @Published private(set) var isRecording = false
     @Published var lastError: String?
 
-    private let monitor: PowerSourceMonitor
+    private let monitor: any PowerSnapshotProviding
     private let reportGenerator: ReportGenerator
     private let csvExporter: CSVExporter
     private let jsonExporter: JSONExporter
@@ -31,7 +31,7 @@ final class BatteryLabRecorder: ObservableObject {
     private var task: Task<Void, Never>?
 
     init(
-        monitor: PowerSourceMonitor,
+        monitor: any PowerSnapshotProviding,
         reportGenerator: ReportGenerator = ReportGenerator(),
         csvExporter: CSVExporter = CSVExporter(),
         jsonExporter: JSONExporter = JSONExporter(),

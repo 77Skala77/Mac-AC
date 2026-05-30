@@ -6,6 +6,7 @@
 # Swift Package Manager / build outputs
 .build/
 .swiftpm/
+dist/
 
 # Xcode local state and build products
 DerivedData/

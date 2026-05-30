@@ -4,101 +4,104 @@ struct MainStatusView: View {
     @EnvironmentObject private var appState: AppState
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text("Mac AC Guard")
                         .font(.headline)
-                    Text(appState.isACGuardModeEnabled ? "Работа от сети активна" : appState.isACGuardSuspended ? "Режим приостановлен" : "Мониторинг")
-                        .font(.subheadline)
+                    Text(appState.text(topStatusKey))
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
-                Image(systemName: appState.snapshot.isACConnected ? "powerplug.fill" : "battery.75percent")
-                    .font(.title2)
-                    .symbolRenderingMode(.hierarchical)
-            }
-
-            GroupBox {
-                VStack(spacing: 8) {
-                    StatusRow(title: "Power", value: appState.snapshot.isACConnected ? "AC Connected" : "Battery")
-                    StatusRow(title: "Battery", value: appState.snapshot.batteryPercent.map { "\($0)%" } ?? "Unknown")
-                    StatusRow(title: "Charging", value: appState.snapshot.isCharging ? "Charging" : appState.snapshot.isCharged ? "Charged" : "Not charging")
-                    StatusRow(title: "Source", value: appState.snapshot.powerSourceType.displayName)
-                    StatusRow(title: "Backend", value: appState.backendStatus.backendName)
-                    StatusRow(title: "Backend status", value: appState.backendStatus.isAvailable ? "Available" : "Monitor only")
-                    StatusRow(title: "Actual limit", value: actualLimitText)
-                    StatusRow(title: "Actual guard", value: appState.actualGuardActive ? "Active" : "Inactive")
-                    if let current = appState.snapshot.amperageMilliamps {
-                        StatusRow(title: "Battery current", value: String(format: "%.0f mA", current))
-                    }
-                    if let power = appState.snapshot.batteryPowerWatts {
-                        StatusRow(title: "Battery power", value: String(format: "%.2f W", power))
-                    }
-                    if let watts = appState.snapshot.adapterWatts {
-                        StatusRow(title: "Adapter", value: String(format: "%.0f W", watts))
-                    }
-                }
-            }
-
-            Toggle(
-                "Работа от сети",
-                isOn: Binding(
-                    get: { appState.isACGuardModeEnabled },
-                    set: { enabled in
-                        if enabled {
-                            appState.enableACMode()
-                        } else {
-                            appState.disableACMode()
-                        }
-                    }
+                StatusBadge(
+                    text: appState.text(topStatusKey),
+                    systemImage: topStatusIcon,
+                    tone: topStatusTone
                 )
-            )
-            .toggleStyle(.switch)
+            }
+
+            GlassCard {
+                Toggle(
+                    appState.text(.workFromAdapter),
+                    isOn: Binding(
+                        get: { appState.isACGuardModeEnabled },
+                        set: { enabled in
+                            enabled ? appState.enableACMode() : appState.disableACMode()
+                        }
+                    )
+                )
+                .font(.body)
+                .fontWeight(.semibold)
+                .toggleStyle(.switch)
+
+                Text(appState.text(.autoGuardHelper))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            VStack(spacing: 5) {
+                StatusRow(title: appState.text(.battery), value: appState.snapshot.batteryPercent.map { "\($0)%" } ?? appState.text(.unknown))
+                StatusRow(title: appState.text(.source), value: appState.text(appState.snapshot.isACConnected ? .adapterSource : .batterySource))
+                StatusRow(title: appState.text(.limit), value: upperLimitText)
+                StatusRow(title: appState.text(.range), value: rangeText)
+                StatusRow(title: appState.text(.mode), value: appState.text(modeKey))
+            }
+            .padding(.horizontal, 2)
 
             ChargeLimitPickerView()
 
+            if appState.shouldShowPermissionSetup {
+                PermissionRequiredCard()
+            }
+
             if let warning = appState.warningMessage {
-                Label(warning, systemImage: "exclamationmark.triangle.fill")
-                    .font(.caption)
-                    .foregroundStyle(.orange)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            if let warning = appState.backendStatus.warning {
-                Label(warning, systemImage: "exclamationmark.triangle")
-                    .font(.caption)
-                    .foregroundStyle(.orange)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            if let error = appState.lastError {
-                Label(error, systemImage: "xmark.octagon.fill")
-                    .font(.caption)
-                    .foregroundStyle(.red)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            if appState.backendStatus.isMonitorOnly {
-                Label("На этом Mac доступен только мониторинг. Управление лимитом зарядки недоступно безопасным способом.", systemImage: "eye")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                WarningBanner(text: warning)
             }
         }
     }
 
-    private var actualLimitText: String {
-        if appState.backendStatus.battDisabled {
-            return "batt disabled / limit 100%"
+    private var topStatusKey: L10nKey {
+        if !appState.snapshot.isACConnected { return .adapterDisconnected }
+        if appState.shouldShowPermissionSetup { return .permissionRequired }
+        if appState.isACGuardModeEnabled { return .active }
+        return .monitoring
+    }
+
+    private var topStatusIcon: String {
+        if !appState.snapshot.isACConnected { return "powerplug.fill" }
+        if appState.shouldShowPermissionSetup { return "lock.shield" }
+        return appState.isACGuardModeEnabled ? "bolt.shield.fill" : "eye"
+    }
+
+    private var topStatusTone: StatusTone {
+        if !appState.snapshot.isACConnected || appState.shouldShowPermissionSetup { return .warning }
+        return appState.isACGuardModeEnabled ? .success : .neutral
+    }
+
+    private var modeKey: L10nKey {
+        if appState.shouldShowPermissionSetup { return .permissionRequired }
+        if appState.isACGuardModeEnabled { return .active }
+        return .inactive
+    }
+
+    private var upperLimitText: String {
+        if appState.backendStatus.battDisabled { return "100%" }
+        return appState.backendStatus.actualUpperLimitPercent.map { "\($0)%" }
+            ?? appState.lastAutoSelectedLimit.map { "\($0.rawValue)%" }
+            ?? appState.text(.unknown)
+    }
+
+    private var rangeText: String {
+        if let lower = appState.backendStatus.actualLowerLimitPercent,
+           let upper = appState.backendStatus.actualUpperLimitPercent {
+            return "\(lower)–\(upper)%"
         }
-        guard let upper = appState.backendStatus.actualUpperLimitPercent else {
-            return "actual limit unknown"
+        if let upper = appState.lastAutoSelectedLimit?.rawValue,
+           let delta = appState.lastAutoSelectedDelta {
+            return "\(upper - delta)–\(upper)%"
         }
-        if let lower = appState.backendStatus.actualLowerLimitPercent {
-            return "\(lower)-\(upper)%"
-        }
-        return "\(upper)%"
+        return appState.text(.unknown)
     }
 }
 

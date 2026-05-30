@@ -24,7 +24,9 @@ struct GuardActivityEvaluator {
             if state.contains("not charging") || state.contains("charged") {
                 return true
             }
-            if batteryPowerNearZero || batteryCurrentNearZero {
+            if !snapshot.isCharging,
+               !state.contains("charging"),
+               (batteryPowerNearZero || batteryCurrentNearZero) {
                 return true
             }
         }

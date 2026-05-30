@@ -13,12 +13,20 @@ final class IntelSMCBackend: ChargeLimitController {
         nil
     }
 
+    func getWriteAccess() -> ChargeWriteAccess {
+        .monitorOnly
+    }
+
     func setChargeLimit(percent: Int) throws {
         throw ChargeLimitError.unsupported("Intel SMC/BCLM control is not enabled in this MVP. If safe control is unavailable, Mac AC Guard stays in monitoring mode.")
     }
 
     func setLowerLimitDelta(percent: Int) throws {
         throw ChargeLimitError.unsupported("Intel lower-limit delta control is not enabled in this MVP.")
+    }
+
+    func enableAdapter() throws {
+        throw ChargeLimitError.unsupported("Intel adapter control is not enabled in this MVP.")
     }
 
     func disableChargeLimit() throws {

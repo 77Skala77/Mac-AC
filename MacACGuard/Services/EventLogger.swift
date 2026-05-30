@@ -9,6 +9,9 @@ enum AppEventKind: String, Codable {
     case modeDisabled
     case limitChanged
     case lowerLimitDeltaChanged
+    case adapterEnabled
+    case permissionSetupRequired
+    case acGuardStoppedAdapterDisconnected
     case batteryStartedDischargingWhileACConnected
     case batteryBelowSafetyThreshold
     case batteryLabTestStarted
@@ -49,6 +52,10 @@ final class EventLogger {
         } else {
             try? line.write(to: logURL, options: .atomic)
         }
+    }
+
+    func flush() {
+        // Event writes are synchronous; this keeps the termination API explicit.
     }
 }
 

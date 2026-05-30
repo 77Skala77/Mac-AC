@@ -7,13 +7,6 @@ enum BatteryLabMode: String, Codable, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    var displayName: String {
-        switch self {
-        case .batteryOnlyGameTest: "Battery only"
-        case .normalChargingGameTest: "Normal charging"
-        case .acGuardGameTest: "AC Guard mode"
-        }
-    }
 }
 
 struct BatteryLabTest: Codable, Identifiable, Equatable {

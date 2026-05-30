@@ -5,12 +5,19 @@ final class AppleSiliconBattBackend: ChargeLimitController {
     private let parser = BattStatusParser()
     private let battExecutable: String
     private let homebrewInstallationDetected: Bool
+    private let localWriteBackend: LocalBattBackend
+    private let helperBackend: PrivilegedHelperBackend
 
-    init(runner: ShellCommandRunner = ShellCommandRunner()) {
+    init(
+        runner: ShellCommandRunner = ShellCommandRunner(),
+        helperClient: PrivilegedHelperClient = PackagedPrivilegedHelperClient()
+    ) {
         self.runner = runner
         let detectedPath = Self.detectBattPath(runner: runner)
         self.battExecutable = detectedPath ?? "batt"
         self.homebrewInstallationDetected = detectedPath?.contains("/homebrew/") == true || detectedPath?.contains("/usr/local/bin/batt") == true
+        self.localWriteBackend = LocalBattBackend(runner: runner, battExecutable: detectedPath ?? "batt")
+        self.helperBackend = PrivilegedHelperBackend(client: helperClient)
     }
 
     func isAvailable() -> Bool {
@@ -37,35 +44,42 @@ final class AppleSiliconBattBackend: ChargeLimitController {
         return parsed.actualUpperLimitPercent
     }
 
+    func getWriteAccess() -> ChargeWriteAccess {
+        helperBackend.isAvailable() ? helperBackend.getWriteAccess() : localWriteBackend.getWriteAccess()
+    }
+
     func setChargeLimit(percent: Int) throws {
         try validateLimit(percent)
-        let result = try runner.run(
-            executable: "/usr/bin/sudo",
-            arguments: ["-n", battExecutable, "limit", "\(percent)"],
-            timeout: 20
-        )
-        try validateBattResult(result, action: "set charge limit to \(percent)%")
+        if helperBackend.isAvailable() {
+            try helperBackend.setChargeLimit(percent: percent)
+        } else {
+            try localWriteBackend.setChargeLimit(percent: percent)
+        }
     }
 
     func setLowerLimitDelta(percent: Int) throws {
-        guard [2, 5, 10].contains(percent) else {
-            throw ChargeLimitError.invalidLimit(percent)
+        try validateDelta(percent)
+        if helperBackend.isAvailable() {
+            try helperBackend.setLowerLimitDelta(percent: percent)
+        } else {
+            try localWriteBackend.setLowerLimitDelta(percent: percent)
         }
-        let result = try runner.run(
-            executable: "/usr/bin/sudo",
-            arguments: ["-n", battExecutable, "lower-limit-delta", "\(percent)"],
-            timeout: 20
-        )
-        try validateBattResult(result, action: "set lower-limit-delta to \(percent)%")
+    }
+
+    func enableAdapter() throws {
+        if helperBackend.isAvailable() {
+            try helperBackend.enableAdapter()
+        } else {
+            try localWriteBackend.enableAdapter()
+        }
     }
 
     func disableChargeLimit() throws {
-        let result = try runner.run(
-            executable: "/usr/bin/sudo",
-            arguments: ["-n", battExecutable, "limit", "100"],
-            timeout: 20
-        )
-        try validateBattResult(result, action: "disable charge limit by setting 100%")
+        if helperBackend.isAvailable() {
+            try helperBackend.disableChargeLimit()
+        } else {
+            try localWriteBackend.disableLimit()
+        }
     }
 
     func getStatus() throws -> ChargeBackendStatus {
@@ -105,18 +119,6 @@ final class AppleSiliconBattBackend: ChargeLimitController {
         return try runner.run(executable: "/usr/bin/env", arguments: [battExecutable] + arguments, timeout: timeout)
     }
 
-    private func validateBattResult(_ result: ShellCommandResult, action: String) throws {
-        guard result.succeeded else {
-            let message = friendlyError(from: result)
-            if message.localizedCaseInsensitiveContains("password") ||
-                message.localizedCaseInsensitiveContains("sudo") ||
-                message.localizedCaseInsensitiveContains("privilege") {
-                throw ChargeLimitError.privilegesRequired("Cannot \(action): \(message). Mac AC Guard does not store passwords. Configure batt/daemon or run the command manually once.")
-            }
-            throw ChargeLimitError.commandFailed("Cannot \(action): \(message)")
-        }
-    }
-
     private func friendlyError(from result: ShellCommandResult) -> String {
         let combined = (result.stderr + "\n" + result.stdout).trimmingCharacters(in: .whitespacesAndNewlines)
         if combined.isEmpty {
@@ -125,10 +127,6 @@ final class AppleSiliconBattBackend: ChargeLimitController {
         if combined.localizedCaseInsensitiveContains("command not found") ||
             combined.localizedCaseInsensitiveContains("no such file") {
             return "batt is not installed or is not in PATH."
-        }
-        if combined.localizedCaseInsensitiveContains("a password is required") ||
-            combined.localizedCaseInsensitiveContains("sorry, try again") {
-            return "sudo requires authentication."
         }
         if combined.localizedCaseInsensitiveContains("daemon") {
             return "batt daemon is not running or not configured."

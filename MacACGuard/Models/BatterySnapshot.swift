@@ -7,13 +7,6 @@ enum PowerSourceType: String, Codable, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    var displayName: String {
-        switch self {
-        case .ac: "AC Power"
-        case .battery: "Battery"
-        case .unknown: "Unknown"
-        }
-    }
 }
 
 struct BatterySnapshot: Codable, Equatable, Identifiable {

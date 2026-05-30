@@ -14,25 +14,6 @@ enum ChargeLimitPreset: Int, Codable, CaseIterable, Identifiable {
         "\(rawValue)%"
     }
 
-    var displayTitle: String {
-        switch self {
-        case .extremeReserve: "30% - экстремальный резерв"
-        case .lowReserve: "40% - низкий резерв"
-        case .longevity: "50% - ресурсный режим"
-        case .recommendedNetwork: "60% - рекомендуемый сетевой режим"
-        case .gamingNetwork: "70% - игровой сетевой режим"
-        case .softProtection: "80% - мягкая защита"
-        }
-    }
-
-    var warning: String? {
-        switch self {
-        case .extremeReserve:
-            "30% - экстремально низкий резерв. При отключении питания времени на автономную работу будет мало."
-        default:
-            nil
-        }
-    }
 }
 
 struct ChargeBackendStatus: Codable, Equatable {
@@ -75,8 +56,10 @@ struct ChargeBackendStatus: Codable, Equatable {
 enum ChargeLimitError: LocalizedError, Equatable {
     case backendUnavailable(String)
     case invalidLimit(Int)
+    case invalidDelta(Int)
     case commandFailed(String)
     case privilegesRequired(String)
+    case helperUnavailable(String)
     case unsupported(String)
 
     var errorDescription: String? {
@@ -85,9 +68,13 @@ enum ChargeLimitError: LocalizedError, Equatable {
             message
         case .invalidLimit(let limit):
             "Unsupported charge limit: \(limit)%."
+        case .invalidDelta(let delta):
+            "Unsupported lower-limit delta: \(delta)%."
         case .commandFailed(let message):
             message
         case .privilegesRequired(let message):
+            message
+        case .helperUnavailable(let message):
             message
         case .unsupported(let message):
             message

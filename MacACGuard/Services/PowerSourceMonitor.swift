@@ -2,7 +2,11 @@ import Foundation
 import IOKit
 import IOKit.ps
 
-final class PowerSourceMonitor {
+protocol PowerSnapshotProviding {
+    func snapshot() -> BatterySnapshot
+}
+
+final class PowerSourceMonitor: PowerSnapshotProviding {
     private let runner: ShellCommandRunner
 
     init(runner: ShellCommandRunner = ShellCommandRunner()) {
