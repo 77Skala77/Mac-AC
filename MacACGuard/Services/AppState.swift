@@ -354,7 +354,7 @@ final class AppState: ObservableObject {
         }
 
         if let delta = backendStatus.actualLowerLimitDeltaPercent,
-           [2, 5, 10].contains(delta) {
+           [1, 2, 5, 10].contains(delta) {
             selectedDelta = delta
         }
     }

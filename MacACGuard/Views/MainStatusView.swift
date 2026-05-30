@@ -49,7 +49,7 @@ struct MainStatusView: View {
             }
             .padding(.horizontal, 2)
 
-            ChargeLimitPickerView()
+            manualLimitSection
 
             if appState.shouldShowPermissionSetup {
                 PermissionRequiredCard()
@@ -59,6 +59,24 @@ struct MainStatusView: View {
                 WarningBanner(text: warning)
             }
         }
+    }
+
+    private var manualLimitSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            if shouldShowAutoGuardManualHint {
+                Text("Auto Guard активен: \(rangeText). Ручная шкала ниже не влияет на текущий режим.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 2)
+            }
+
+            ChargeLimitPickerView()
+                .opacity(shouldShowAutoGuardManualHint ? 0.78 : 1.0)
+        }
+    }
+
+    private var shouldShowAutoGuardManualHint: Bool {
+        appState.isACGuardModeEnabled || appState.requestedMode == .auto
     }
 
     private var topStatusKey: L10nKey {
@@ -97,10 +115,12 @@ struct MainStatusView: View {
            let upper = appState.backendStatus.actualUpperLimitPercent {
             return "\(lower)–\(upper)%"
         }
+
         if let upper = appState.lastAutoSelectedLimit,
            let delta = appState.lastAutoSelectedDelta {
             return "\(max(upper - delta, 0))–\(upper)%"
         }
+
         return appState.text(.unknown)
     }
 }
