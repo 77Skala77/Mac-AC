@@ -50,7 +50,7 @@ struct MacACGuardApp: App {
         Settings {
             SettingsView()
                 .environmentObject(appState)
-                .frame(width: 410)
+                .frame(width: 520)
                 .padding(10)
                 .background(.regularMaterial)
         }

@@ -34,7 +34,7 @@ struct MenuBarView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .frame(width: 410)
+        .frame(width: 520)
         .background(.regularMaterial)
     }
 }
