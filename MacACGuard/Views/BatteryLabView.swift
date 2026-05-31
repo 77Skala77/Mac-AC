@@ -6,6 +6,7 @@ struct BatteryLabView: View {
     @State private var selectedMode: BatteryLabMode = .acGuardGameTest
     @State private var selectedDurationMinutes = 15
     @State private var customDurationMinutes = 45
+    @State private var customDurationText = "45"
     @State private var useCustomDuration = false
     @State private var useInfiniteDuration = false
     @State private var gameProcessName = ""
@@ -20,8 +21,13 @@ struct BatteryLabView: View {
             return nil
         }
 
-        let minutes = useCustomDuration ? customDurationMinutes : selectedDurationMinutes
+        let minutes = useCustomDuration ? sanitizedCustomDurationMinutes : selectedDurationMinutes
         return TimeInterval(minutes * 60)
+    }
+
+    private var sanitizedCustomDurationMinutes: Int {
+        let parsed = Int(customDurationText.trimmingCharacters(in: .whitespacesAndNewlines)) ?? customDurationMinutes
+        return min(max(parsed, 1), 720)
     }
 
     var body: some View {
@@ -50,16 +56,42 @@ struct BatteryLabView: View {
                 .onChange(of: useCustomDuration) { _, enabled in
                     if enabled {
                         useInfiniteDuration = false
+                        customDurationText = "\(customDurationMinutes)"
                     }
                 }
 
             if useCustomDuration {
-                Stepper(appState.format(.minutes, customDurationMinutes), value: $customDurationMinutes, in: 1...720)
-                    .font(.caption)
+                HStack(spacing: 8) {
+                    TextField(appState.text(.duration), text: $customDurationText)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 72)
+                        .multilineTextAlignment(.trailing)
+                        .onSubmit {
+                            commitCustomDurationText()
+                        }
+                        .onChange(of: customDurationText) { _, newValue in
+                            let filtered = newValue.filter(\.isNumber)
+                            if filtered != newValue {
+                                customDurationText = filtered
+                            }
+                        }
+
+                    Text("мин")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    Text("1–720")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
+                .onDisappear {
+                    commitCustomDurationText()
+                }
             }
 
-            Toggle("Бесконечный тест — до нажатия Стоп", isOn: $useInfiniteDuration)
+            Toggle("Бесконечный тест — до Стоп", isOn: $useInfiniteDuration)
                 .font(.caption)
+                .lineLimit(1)
                 .onChange(of: useInfiniteDuration) { _, enabled in
                     if enabled {
                         useCustomDuration = false
@@ -70,6 +102,8 @@ struct BatteryLabView: View {
                 Text("Тест будет идти, пока вы не нажмёте «Стоп».")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             TextField(appState.text(.gameProcessOptional), text: $gameProcessName)
@@ -78,6 +112,7 @@ struct BatteryLabView: View {
             HStack {
                 Button {
                     startButtonLocked = true
+                    commitCustomDurationText()
                     do {
                         try recorder.start(
                             mode: selectedMode,
@@ -97,18 +132,24 @@ struct BatteryLabView: View {
                         startButtonLocked = false
                     }
                 } label: {
-                    Label(appState.text(.startTest), systemImage: "play.fill")
+                    Label(recorder.isRecording ? "Тест идёт" : appState.text(.startTest), systemImage: recorder.isRecording ? "record.circle" : "play.fill")
                 }
                 .disabled(recorder.isRecording || startButtonLocked)
+                .opacity(recorder.isRecording ? 0.55 : 1.0)
 
                 Button {
                     recorder.stop(save: true)
                 } label: {
-                    Label(appState.text(.stopTest), systemImage: "stop.fill")
+                    Label(recorder.isRecording ? appState.text(.stopTest) : "Тест остановлен", systemImage: recorder.isRecording ? "stop.fill" : "checkmark.circle")
                 }
                 .disabled(!recorder.isRecording)
+                .opacity(recorder.isRecording ? 1.0 : 0.55)
             }
             .buttonStyle(SecondaryActionButtonStyle())
+
+            Label(recorder.isRecording ? "Тест сейчас идёт" : "Тест остановлен", systemImage: recorder.isRecording ? "record.circle" : "checkmark.circle")
+                .font(.caption)
+                .foregroundStyle(recorder.isRecording ? .green : .secondary)
 
             GlassCard(appState.text(.liveMetrics)) {
                 VStack(spacing: 5) {
@@ -157,6 +198,7 @@ struct BatteryLabView: View {
                 comparisonCard(comparison)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func comparisonCard(_ comparison: BatteryLabComparison) -> some View {
@@ -193,6 +235,13 @@ struct BatteryLabView: View {
         case .normalChargingGameTest: appState.text(.normalCharging)
         case .acGuardGameTest: appState.text(.acGuardMode)
         }
+    }
+
+    private func commitCustomDurationText() {
+        let parsed = Int(customDurationText.trimmingCharacters(in: .whitespacesAndNewlines)) ?? customDurationMinutes
+        let clamped = min(max(parsed, 1), 720)
+        customDurationMinutes = clamped
+        customDurationText = "\(clamped)"
     }
 
     private func openExportFolder() {
