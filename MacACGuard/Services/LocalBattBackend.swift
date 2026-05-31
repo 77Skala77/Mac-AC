@@ -19,7 +19,7 @@ final class LocalBattBackend {
     }
 
     func setChargeLimit(percent: Int) throws {
-        guard (30...80).contains(percent) else {
+        guard (5...100).contains(percent) else {
             throw ChargeLimitError.invalidLimit(percent)
         }
 

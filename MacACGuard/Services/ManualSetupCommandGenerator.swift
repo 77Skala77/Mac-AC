@@ -30,7 +30,7 @@ struct ManualSetupCommandGenerator {
     }
 
     private func validate(limit: Int, delta: Int) throws {
-        guard (30...80).contains(limit) else {
+        guard (5...100).contains(limit) else {
             throw ChargeLimitError.invalidLimit(limit)
         }
 

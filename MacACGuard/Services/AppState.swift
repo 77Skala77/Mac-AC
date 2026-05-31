@@ -177,11 +177,11 @@ final class AppState: ObservableObject {
             return
         }
 
-        guard let batteryPercent = snapshot.batteryPercent, batteryPercent >= 30 else {
+        guard let batteryPercent = snapshot.batteryPercent, batteryPercent >= 5 else {
             requestedMode = .none
             userRequestedAutoGuard = false
             userNotice = .reserveBelowSafe
-            logger.log(.batteryBelowSafetyThreshold, "AC Guard was not enabled because battery reserve is below 30%.")
+            logger.log(.batteryBelowSafetyThreshold, "AC Guard was not enabled because battery reserve is below 5%.")
             return
         }
 
@@ -470,10 +470,10 @@ final class AppState: ObservableObject {
             }
         }
 
-        if let percent = snapshot.batteryPercent, percent < 30 {
+        if let percent = snapshot.batteryPercent, percent < 5 {
             userNotice = .reserveBelowSafe
             if !hasLoggedLowReserveWarning {
-                logger.log(.batteryBelowSafetyThreshold, "Battery reserve below 30%: \(percent)%.")
+                logger.log(.batteryBelowSafetyThreshold, "Battery reserve below 5%: \(percent)%.")
                 hasLoggedLowReserveWarning = true
             }
         } else {

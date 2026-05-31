@@ -14,9 +14,9 @@ protocol ChargeLimitController {
 
 extension ChargeLimitController {
     /// Auto Guard can use exact current battery percent, not only manual presets.
-    /// Safe automatic range: 30...80.
+    /// Safe automatic range: 5...100.
     func validateLimit(_ percent: Int) throws {
-        guard (30...80).contains(percent) else {
+        guard (5...100).contains(percent) else {
             throw ChargeLimitError.invalidLimit(percent)
         }
     }

@@ -1,12 +1,12 @@
 import Foundation
 
 struct AutoGuardLimitSelector {
-    static let minimumAutoLimit = 30
-    static let maximumAutoLimit = 80
+    static let minimumAutoLimit = 5
+    static let maximumAutoLimit = 100
     static let defaultDelta = 1
 
     /// Auto Guard keeps the battery near the current charge level with 1% precision,
-    /// but clamps the automatic limit to the safe 30–80% range.
+    /// but clamps the automatic limit to the safe 5–100% range.
     ///
     /// Examples:
     /// - 25% -> 30%
