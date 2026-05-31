@@ -46,7 +46,7 @@ final class BatteryLabRecorder: ObservableObject {
 
     func start(
         mode: BatteryLabMode,
-        durationSeconds: TimeInterval,
+        durationSeconds: TimeInterval?,
         gameProcessName: String?,
         selectedChargeLimit: Int?,
         selectedLowerLimitDelta: Int?,
@@ -76,7 +76,8 @@ final class BatteryLabRecorder: ObservableObject {
         lastComparison = nil
         lastError = nil
         isRecording = true
-        logger.log(.batteryLabTestStarted, "Battery Lab test started: \(mode.rawValue), duration \(Int(durationSeconds))s.")
+        let durationDescription = durationSeconds.map { "\(Int($0))s" } ?? "infinite"
+        logger.log(.batteryLabTestStarted, "Battery Lab test started: \(mode.rawValue), duration \(durationDescription).")
 
         task = Task { [weak self] in
             guard let self else { return }
@@ -92,11 +93,11 @@ final class BatteryLabRecorder: ObservableObject {
                     backendStatus: backendStatusProvider()
                 )
 
-                if elapsed >= durationSeconds {
+                if let durationSeconds, elapsed >= durationSeconds {
                     self.finish(save: true)
                     return
                 }
-
+                
                 do {
                     try await Task.sleep(for: .seconds(5))
                 } catch {

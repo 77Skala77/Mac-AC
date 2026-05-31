@@ -6,14 +6,16 @@ enum BatteryLabMode: String, Codable, CaseIterable, Identifiable {
     case acGuardGameTest = "ACGuardGameTest"
 
     var id: String { rawValue }
-
 }
 
 struct BatteryLabTest: Codable, Identifiable, Equatable {
     var id: UUID
     var mode: BatteryLabMode
     var startedAt: Date
-    var plannedDurationSeconds: TimeInterval
+
+    /// nil means an infinite test that runs until the user presses Stop.
+    var plannedDurationSeconds: TimeInterval?
+
     var gameProcessName: String?
     var selectedChargeLimit: Int?
     var selectedLowerLimitDelta: Int?
@@ -23,7 +25,7 @@ struct BatteryLabTest: Codable, Identifiable, Equatable {
         id: UUID = UUID(),
         mode: BatteryLabMode,
         startedAt: Date = Date(),
-        plannedDurationSeconds: TimeInterval,
+        plannedDurationSeconds: TimeInterval?,
         gameProcessName: String?,
         selectedChargeLimit: Int?,
         selectedLowerLimitDelta: Int?,
