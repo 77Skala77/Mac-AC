@@ -5,8 +5,9 @@ struct BatteryLabView: View {
     @EnvironmentObject private var appState: AppState
     @State private var selectedMode: BatteryLabMode = .acGuardGameTest
     @State private var selectedDurationMinutes = 15
-    @State private var customDurationMinutes = 15
+    @State private var customDurationMinutes = 45
     @State private var useCustomDuration = false
+    @State private var useInfiniteDuration = false
     @State private var gameProcessName = ""
     @State private var startButtonLocked = false
 
@@ -14,8 +15,13 @@ struct BatteryLabView: View {
         appState.batteryLabRecorder
     }
 
-    private var durationSeconds: TimeInterval {
-        TimeInterval((useCustomDuration ? customDurationMinutes : selectedDurationMinutes) * 60)
+    private var durationSeconds: TimeInterval? {
+        if useInfiniteDuration {
+            return nil
+        }
+
+        let minutes = useCustomDuration ? customDurationMinutes : selectedDurationMinutes
+        return TimeInterval(minutes * 60)
     }
 
     var body: some View {
@@ -31,19 +37,39 @@ struct BatteryLabView: View {
             .pickerStyle(.segmented)
 
             Picker(appState.text(.duration), selection: $selectedDurationMinutes) {
-                Text("5").tag(5)
                 Text("10").tag(10)
                 Text("15").tag(15)
                 Text("20").tag(20)
             }
             .pickerStyle(.segmented)
-            .disabled(useCustomDuration)
+            .disabled(useCustomDuration || useInfiniteDuration)
 
             Toggle(appState.text(.customDuration), isOn: $useCustomDuration)
                 .font(.caption)
+                .disabled(useInfiniteDuration)
+                .onChange(of: useCustomDuration) { _, enabled in
+                    if enabled {
+                        useInfiniteDuration = false
+                    }
+                }
+
             if useCustomDuration {
-                Stepper(appState.format(.minutes, customDurationMinutes), value: $customDurationMinutes, in: 1...180)
+                Stepper(appState.format(.minutes, customDurationMinutes), value: $customDurationMinutes, in: 1...720)
                     .font(.caption)
+            }
+
+            Toggle("Бесконечный тест — до нажатия Стоп", isOn: $useInfiniteDuration)
+                .font(.caption)
+                .onChange(of: useInfiniteDuration) { _, enabled in
+                    if enabled {
+                        useCustomDuration = false
+                    }
+                }
+
+            if useInfiniteDuration {
+                Text("Тест будет идти, пока вы не нажмёте «Стоп».")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             TextField(appState.text(.gameProcessOptional), text: $gameProcessName)
