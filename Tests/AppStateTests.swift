@@ -45,7 +45,7 @@ final class AppStateTests: XCTestCase {
         XCTAssertEqual(appState.selectedDelta, 5)
     }
 
-    func testActualGuardActiveWithoutUserSessionDoesNotTurnToggleOn() {
+    func testActualGuardActiveWithoutUserSessionShowsFactuallyActiveMode() {
         let monitor = FakePowerMonitor(snapshot: batterySnapshot())
         let backend = FakeChargeLimitController(status: inactiveStatus)
         let appState = makeAppState(monitor: monitor, backend: backend, performInitialRefresh: false)
@@ -60,7 +60,8 @@ final class AppStateTests: XCTestCase {
         appState.refreshStatus()
 
         XCTAssertTrue(appState.actualGuardActive)
-        XCTAssertFalse(appState.isACGuardModeEnabled)
+        XCTAssertTrue(appState.isACGuardModeEnabled)
+        XCTAssertEqual(appState.requestedMode, .none)
     }
 
     func testOneClickAutoGuardIgnoresManualLimitAndUsesCurrentBatteryLevel() {
@@ -141,7 +142,7 @@ final class AppStateTests: XCTestCase {
         XCTAssertTrue(try loggedKinds(at: logURL).contains(.acGuardStoppedAdapterDisconnected))
     }
 
-    func testLiveMonitoringReconnectDoesNotSilentlyEnableMode() {
+    func testLiveMonitoringReconnectShowsExternalActiveBackendWithoutRestoringRequest() {
         let monitor = FakePowerMonitor(snapshot: batterySnapshot())
         let backend = FakeChargeLimitController(status: activeStatus)
         let appState = makeAppState(monitor: monitor, backend: backend)
@@ -156,7 +157,8 @@ final class AppStateTests: XCTestCase {
         monitor.currentSnapshot = batterySnapshot()
         appState.performLiveMonitoringTick()
 
-        XCTAssertFalse(appState.isACGuardModeEnabled)
+        XCTAssertTrue(appState.actualGuardActive)
+        XCTAssertTrue(appState.isACGuardModeEnabled)
         XCTAssertFalse(appState.configuredPending)
         XCTAssertFalse(appState.userRequestedAutoGuard)
         XCTAssertEqual(appState.requestedMode, .none)

@@ -446,6 +446,9 @@ final class AppState: ObservableObject {
             resetAdapterLoadAssessment()
             configuredPending = false
             isACGuardModeEnabled = false
+            if userNotice == .adapterConnectedEnableAgain {
+                userNotice = nil
+            }
             return
         }
 
@@ -490,7 +493,7 @@ final class AppState: ObservableObject {
 
         guard requestedMode != .none else {
             configuredPending = false
-            isACGuardModeEnabled = false
+            isACGuardModeEnabled = actualGuardActive
             return
         }
 
